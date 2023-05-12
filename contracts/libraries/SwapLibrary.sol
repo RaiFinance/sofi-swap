@@ -1,6 +1,7 @@
 pragma solidity >=0.5.0;
 
 import '../interfaces/ISwapPair.sol';
+import '../interfaces/ISwapFactory.sol';
 
 import "./SafeMath.sol";
 
@@ -15,14 +16,26 @@ library SwapLibrary {
     }
 
     // calculates the CREATE2 address for a pair without making any external calls
-    function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
-        (address token0, address token1) = sortTokens(tokenA, tokenB);
-        pair = address(uint(keccak256(abi.encodePacked(
-                hex'ff',
-                factory,
-                keccak256(abi.encodePacked(token0, token1)),
-                hex'63ee939074041f1d4ab151bce9c888969f0f4f6c46198e37e463cfe1aea7104b' // rinkeby
-            ))));
+    // function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
+    //     (address token0, address token1) = sortTokens(tokenA, tokenB);
+    //     pair = address(uint(keccak256(abi.encodePacked(
+    //             hex'ff',
+    //             factory,
+    //             keccak256(abi.encodePacked(token0, token1)),
+    //             hex'e99935d47dc26c62db760e50a73d6ca10840061765e8d96a2f3e727cd20bcdf1'
+    //         ))));
+    // }
+    /**
+     * @dev Fetches pair address with given tokens.
+     *
+     * It will fetches from the storage instead of calculation with CREATE2,
+     * because the limitation of zkSync 2.0.
+     * 
+     * Note it will returns `address(0)` for non-exist pairs.
+     * Consider reuse the pair address to avoid multiple storage accesses.
+     */
+    function pairFor(address factory, address tokenA, address tokenB) internal view returns (address pair) {
+        return ISwapFactory(factory).getPair(tokenA, tokenB);
     }
 
     // fetches and sorts the reserves for a pair
